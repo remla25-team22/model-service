@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    # only run when you push tags like v1.2.3
+    tags:
+      - 'v*.*.*'
+      
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read      
+      packages: write     
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set IMAGE and TAG env vars
+        run: |
+          # derive the tag (e.g. "v1.2.3") and strip off the leading "v"
+          TAG="${GITHUB_REF#refs/tags/v}"
+          # build the full image name and lowercase it
+          IMAGE="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
+          IMAGE="${IMAGE,,}"
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          echo "TAG=$TAG"   >> $GITHUB_ENV
+
+      - name: Build and push Docker image
+        run: |
+          docker build --tag $IMAGE:$TAG .
+          docker push $IMAGE:$TAG
