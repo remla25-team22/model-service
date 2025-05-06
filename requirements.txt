@@ -1,4 +1,5 @@
 Flask==2.3.3
 flasgger==0.9.7.1
 scikit-learn
-git+https://github.com/remla25-team22/lib-ml@v1.0.1
+requests
+git+https://github.com/remla25-team22/lib-ml@v1.0.2

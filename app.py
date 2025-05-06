@@ -20,13 +20,11 @@ resp = requests.get(CLF_URL); resp.raise_for_status()
 buf = io.BytesIO(resp.content)
 classifier = joblib.load(buf)
 
-# Optional: build a small pipeline so you can still call .predict on one object
 model = Pipeline([
   ("vect", vectorizer),
   ("clf",  classifier)
 ])
 
-# Serve predictions
 app = Flask(__name__)
 swagger = Swagger(app)
 
@@ -58,14 +56,9 @@ def predict():
               description: 0 = negative, 1 = positive
     """
     text = request.get_json().get("text", "")
-    # 1) vectorize → sparse
     X_sparse = vectorizer.transform([text])
-    # 2) convert to dense exactly like your training did
     X_dense = X_sparse.toarray()
-    # 3) predict
-    print("The input is ", len(X_dense[0]))
     pred = classifier.predict(X_dense)
-    print("the model output is ", pred)
     return jsonify({"prediction": int(pred)})
 
 
