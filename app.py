@@ -6,9 +6,14 @@ from flasgger import Swagger
 from sklearn.pipeline import Pipeline
 
 
-# Hard-coded model URL
-VECTOR_URL = "https://github.com/remla25-team22/model-training/releases/download/v1.0.1/c1_BoW_Sentiment_Model.pkl"
-CLF_URL = "https://github.com/remla25-team22/model-training/releases/download/v1.0.1/c2_Classifier_Sentiment_Model"
+MODEL_TAG = os.getenv("MODEL_TAG")
+if not MODEL_TAG:
+    raise RuntimeError("Missing MODEL_TAG env-var")
+
+
+VECTOR_URL = f"https://github.com/remla25-team22/model-training/releases/download/{MODEL_TAG}/c1_BoW_Sentiment_Model.pkl"
+CLF_URL =    f"https://github.com/remla25-team22/model-training/releases/download/{MODEL_TAG}/c2_Classifier_Sentiment_Model"
+
 
 resp = requests.get(VECTOR_URL); resp.raise_for_status()
 vectorizer = pickle.loads(resp.content)
