@@ -1,4 +1,4 @@
-name: Auto Tag, Build & Release Model Service
+name: Auto Tag, Build, Test & Release Model Service
 
 on:
   push:
@@ -60,7 +60,17 @@ jobs:
       - name: Build and push multi-arch Docker image
         run: |
           docker buildx create --use
-          docker buildx build             --platform linux/amd64,linux/arm64             --tag $IMAGE:${{ env.VERSION_CLEANED }}             --push .
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag $IMAGE:${{ env.VERSION_CLEANED }} \
+            --push .
+
+      - name: Test container with MODEL_TAG
+        run: |
+          docker run --rm -e MODEL_TAG=${{ env.VERSION_CLEANED }} $IMAGE:${{ env.VERSION_CLEANED }} &
+          sleep 5
+          curl -X POST http://localhost:8080/ -H "Content-Type: application/json" -d '{"text": "I love this!"}'
+          docker stop $(docker ps -q --filter ancestor=$IMAGE:${{ env.VERSION_CLEANED }}) || true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
