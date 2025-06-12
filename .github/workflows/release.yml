@@ -80,10 +80,13 @@ jobs:
           done
       
           echo "Sending test request..."
-          curl -X POST http://localhost:8080/ -H "Content-Type: application/json" -d '{"text": "I love this!"}'
+          curl -X POST http://localhost:8080/ -H "Content-Type: application/json" -d '{"text": "I love this!"}' || true
+      
+          echo "=== CONTAINER LOGS ==="
+          docker logs model-test || true
       
           docker stop model-test
-
+      
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
