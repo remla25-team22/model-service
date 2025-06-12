@@ -1,12 +1,12 @@
-name: Release Model Service Image
+name: Auto Tag, Build & Release Model Service
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -17,6 +17,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -24,23 +29,58 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set IMAGE and TAG env vars
+      - name: Read version from VERSION.txt
+        id: version
         run: |
-          TAG="${GITHUB_REF#refs/tags/v}"
+          VERSION=$(cat VERSION.txt)
+          if [[ -z "$VERSION" ]]; then
+            echo "VERSION.txt is empty. Aborting."
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          VERSION_CLEANED="${VERSION#v}"
+          echo "VERSION_CLEANED=$VERSION_CLEANED" >> $GITHUB_ENV
+          echo "Current version: $VERSION"
+
+      - name: Tag release if not exists
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/${{ env.VERSION }}"; then
+            echo "Tag already exists. Skipping release."
+            exit 0
+          fi
+          git tag ${{ env.VERSION }}
+          git push origin ${{ env.VERSION }}
+
+      - name: Set image name
+        run: |
           IMAGE="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
           IMAGE="${IMAGE,,}"
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-          echo "TAG=$TAG"   >> $GITHUB_ENV
 
-      - name: Build multi-arch Docker image
+      - name: Build and push multi-arch Docker image
         run: |
           docker buildx create --use
-          docker buildx build             --platform linux/amd64,linux/arm64             --tag $IMAGE:$TAG             --push .
+          docker buildx build             --platform linux/amd64,linux/arm64             --tag $IMAGE:${{ env.VERSION_CLEANED }}             --push .
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.TAG }}
+          tag_name: ${{ env.VERSION }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump to next patch pre-release version
+        run: |
+          VERSION=${{ env.VERSION }}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${VERSION#v}"
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="v${MAJOR}.${MINOR}.${NEXT_PATCH}-pre"
+          echo "$NEXT_VERSION" > VERSION.txt
+          echo "NEXT_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
+
+      - name: Commit and push version bump
+        run: |
+          git add VERSION.txt
+          git commit -m "Bump version to ${{ env.NEXT_VERSION }} after release ${{ env.VERSION }}"
+          git push origin main || echo "Push to main failed (possibly protected branch)."
