@@ -67,10 +67,22 @@ jobs:
 
       - name: Test container with MODEL_TAG
         run: |
-          docker run --rm -e MODEL_TAG=${{ env.VERSION_CLEANED }} $IMAGE:${{ env.VERSION_CLEANED }} &
-          sleep 5
+          docker run -d --name model-test -e MODEL_TAG=${{ env.VERSION_CLEANED }} -p 8080:8080 $IMAGE:${{ env.VERSION_CLEANED }}
+          
+          echo "Waiting for server to start..."
+          for i in {1..15}; do
+            if curl -s http://localhost:8080/ > /dev/null; then
+              echo "Server is up!"
+              break
+            fi
+            echo "Waiting ($i)..."
+            sleep 2
+          done
+      
+          echo "Sending test request..."
           curl -X POST http://localhost:8080/ -H "Content-Type: application/json" -d '{"text": "I love this!"}'
-          docker stop $(docker ps -q --filter ancestor=$IMAGE:${{ env.VERSION_CLEANED }}) || true
+      
+          docker stop model-test
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
