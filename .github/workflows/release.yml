@@ -1,17 +1,17 @@
-name: Release
+name: Release Model Service Image
 
 on:
   push:
-    # only run when you push tags like v1.2.3
     tags:
       - 'v*.*.*'
-      
+
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   release:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read      
-      packages: write     
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -26,15 +26,21 @@ jobs:
 
       - name: Set IMAGE and TAG env vars
         run: |
-          # derive the tag (e.g. "v1.2.3") and strip off the leading "v"
           TAG="${GITHUB_REF#refs/tags/v}"
-          # build the full image name and lowercase it
           IMAGE="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
           IMAGE="${IMAGE,,}"
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
           echo "TAG=$TAG"   >> $GITHUB_ENV
 
-      - name: Build and push Docker image
+      - name: Build multi-arch Docker image
         run: |
-          docker build --tag $IMAGE:$TAG .
-          docker push $IMAGE:$TAG
+          docker buildx create --use
+          docker buildx build             --platform linux/amd64,linux/arm64             --tag $IMAGE:$TAG             --push .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ env.TAG }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
