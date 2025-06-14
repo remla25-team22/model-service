@@ -1,4 +1,4 @@
-from lib_ml import preprocess
+from lib_ml.preprocess import clean_review as preprocess
 import requests
 import os, pickle, joblib, requests, io
 from flask import Flask, request, jsonify
@@ -61,7 +61,8 @@ def predict():
               description: 0 = negative, 1 = positive
     """
     text = request.get_json().get("text", "")
-    X_sparse = vectorizer.transform([text])
+    processed_text = preprocess(text)
+    X_sparse = vectorizer.transform([processed_text])
     X_dense = X_sparse.toarray()
     pred = classifier.predict(X_dense)
     return jsonify({"prediction": int(pred)})
