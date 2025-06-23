@@ -10,7 +10,7 @@ if not MODEL_TAG:
     raise RuntimeError("Missing MODEL_TAG env-var")
 
 VECTOR_URL = f"https://github.com/remla25-team22/model-training/releases/download/{MODEL_TAG}/c1_BoW_Sentiment_Model.pkl"
-CLF_URL    = f"https://github.com/remla25-team22/model-training/releases/download/{MODEL_TAG}/c2_Classifier_Sentiment_Model"
+CLF_URL    = f"https://github.com/remla25-team22/model-training/releases/download/{MODEL_TAG}/c2_Classifier_Sentiment_Model.pkl"
 
 os.makedirs("model_cache", exist_ok=True)
 
@@ -73,6 +73,18 @@ def predict():
 def get_model_version():
     """
     Returns the model-service’s current version.
+    ---
+    tags:
+      - Version
+    responses:
+      200:
+        description: Semantic Version
+        schema:
+          type: object
+          properties:
+            version:
+              type: string
+              description: semantic version
     """
     try:
         with open("VERSION.txt", "r") as version_file:
