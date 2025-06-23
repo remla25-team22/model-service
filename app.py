@@ -69,5 +69,18 @@ def predict():
     pred = classifier.predict(X_dense)
     return jsonify({"prediction": int(pred)})
 
+@app.route("/version/model", methods=["GET"])
+def get_model_version():
+    """
+    Returns the model-service’s current version.
+    """
+    try:
+        with open("VERSION.txt", "r") as version_file:
+            version = version_file.read().strip()
+    except IOError:
+        return jsonify({"error": "VERSION.txt not found"}), 500
+
+    return jsonify({"version": version})
+
 port_env = int(os.getenv("PORT", 8080))
 app.run(host="0.0.0.0", port=port_env, debug=True)
