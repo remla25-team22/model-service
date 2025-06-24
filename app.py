@@ -4,6 +4,7 @@ import os, pickle, joblib, io
 from flask import Flask, request, jsonify
 from flasgger import Swagger
 from sklearn.pipeline import Pipeline
+import Path
 
 MODEL_TAG = os.getenv("MODEL_TAG")
 if not MODEL_TAG:
@@ -96,13 +97,16 @@ def get_model_version():
               type: string
               description: semantic version
     """
+    
+    VERSION_PATH = Path(__file__).with_name("VERSION.txt")
     try:
-        with open("VERSION.txt", "r") as version_file:
-            version = version_file.read().strip()
-    except IOError:
-        return jsonify({"error": "VERSION.txt not found"}), 500
+        version = VERSION_PATH.read_text().strip()
+    except FileNotFoundError:
+        return jsonify({"error": f"{VERSION_PATH} not found"}), 500
 
-    return jsonify({"version": version})
+    response = jsonify({"prediction": int(pred)})
+    response.headers["X-Model-Version"] = version
+    return response
 
 port_env = int(os.getenv("PORT", 8080))
 app.run(host="0.0.0.0", port=port_env, debug=True)
