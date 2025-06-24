@@ -70,7 +70,8 @@ def predict():
     pred = classifier.predict(X_dense)
     response = jsonify({
         "prediction": int(pred),
-        "modelVersion": MODEL_TAG 
+        "modelVersion": str(MODEL_TAG),
+        "test": "test"
     })
     return response
 
