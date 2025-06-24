@@ -4,7 +4,7 @@ import os, pickle, joblib, io
 from flask import Flask, request, jsonify
 from flasgger import Swagger
 from sklearn.pipeline import Pipeline
-import Path
+from pathlib import Path
 
 MODEL_TAG = os.getenv("MODEL_TAG")
 if not MODEL_TAG:
@@ -97,7 +97,7 @@ def get_model_version():
               type: string
               description: semantic version
     """
-    
+
     VERSION_PATH = Path(__file__).with_name("VERSION.txt")
     try:
         version = VERSION_PATH.read_text().strip()
