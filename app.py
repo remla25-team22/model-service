@@ -70,8 +70,6 @@ def predict():
     pred = classifier.predict(X_dense)
     response = jsonify({
         "prediction": int(pred),
-        "modelVersion": str(MODEL_TAG),
-        "test": "test"
     })
     return response
 
@@ -93,16 +91,14 @@ def get_model_version():
               type: string
               description: semantic version
     """
-
-    VERSION_PATH = Path(__file__).with_name("VERSION.txt")
     try:
-        version = VERSION_PATH.read_text().strip()
-    except FileNotFoundError:
-        return jsonify({"error": f"{VERSION_PATH} not found"}), 500
+        with open("VERSION.txt", "r") as version_file:
+            version = version_file.read().strip()
+    except IOError:
+        return jsonify({"error": "VERSION.txt not found"}), 500
 
-    response = jsonify({"prediction": int(pred)})
-    response.headers["X-Model-Version"] = version
-    return response
+    return jsonify({"version": version})
+
 
 port_env = int(os.getenv("PORT", 8080))
 app.run(host="0.0.0.0", port=port_env, debug=True)
