@@ -68,8 +68,10 @@ def predict():
     X_sparse = vectorizer.transform([processed_text])
     X_dense = X_sparse.toarray()
     pred = classifier.predict(X_dense)
-    response = jsonify({"prediction": int(pred)})
-    response.headers["X-Model-Version"] = MODEL_TAG
+    response = jsonify({
+        "prediction": int(pred),
+        "model_version": MODEL_TAG 
+    })
     return response
 
 
