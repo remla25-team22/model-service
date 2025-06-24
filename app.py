@@ -68,15 +68,8 @@ def predict():
     X_sparse = vectorizer.transform([processed_text])
     X_dense = X_sparse.toarray()
     pred = classifier.predict(X_dense)
-
-    try:
-      with open("VERSION.txt", "r") as version_file:
-          version = version_file.read().strip()
-    except IOError:
-      return jsonify({"error": "VERSION.txt not found"}), 500
-
     response = jsonify({"prediction": int(pred)})
-    response.headers["X-Model-Version"] = version
+    response.headers["X-Model-Version"] = MODEL_TAG
     return response
 
 
