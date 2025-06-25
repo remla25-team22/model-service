@@ -9,6 +9,7 @@ RUN apt-get update \
 COPY requirements.txt /root/
 RUN pip install -r requirements.txt
 COPY app.py /root/
+COPY VERSION.txt /root/
 ENTRYPOINT ["python"]
 CMD ["app.py"]
 
